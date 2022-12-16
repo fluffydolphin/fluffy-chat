@@ -44,62 +44,6 @@ $$/       $$/  $$$$$$/  $$/       $$/       $$$$$$$ |       $$$$$$$/ $$/   $$/  
     
     
 
-if 'userdata.db' in os.listdir():
-    data = input(f"\n[{INPUT}] Would you like to redo your authentication file (y/n)? ")
-    while(data != "y" and data != "n"):
-        print(f"[{FAILED}] (y/n) \n{END}")
-        time.sleep(0.4)
-        data = input(f"\n[{INPUT}] Would you like to redo your authentication file (y/n)? ")
-    if data == "n":
-        print(f"\n[{INFO}] Saving current authentication file\n")
-    if data == "y":
-        os.remove('userdata.db')
-        conn = sqlite3.connect("./userdata.db")
-        cur = conn.cursor()
-
-        cur.execute("""
-        CREATE TABLE IF NOT EXISTS userdata (
-            id INTEGER PRIMARY KEY,
-            username VARCHAR(255) NOT NULL,
-            password VARCHAR(255) NOT NULL
-        )
-        """)
-
-        username = dict()
-        password = dict()
-
-        data = int(input(f"\n[{INPUT}] how many users do you want to make? "))
-        for i in range(0, data):
-            users_name = input(f"\n[{INPUT}] what is this users name? ")
-            password_ = maskpass.askpass(prompt=f"[{INPUT}] what is this users password? ", mask="*")
-            username[i], password[i] = users_name, hashlib.sha256(password_.encode()).hexdigest()
-            cur.execute("INSERT INTO userdata (username, password) VALUES (?, ?)", (username[i], password[i])) 
-        
-        conn.commit() 
-else:
-    conn = sqlite3.connect("./userdata.db")
-    cur = conn.cursor()
-
-    cur.execute("""
-    CREATE TABLE IF NOT EXISTS userdata (
-        id INTEGER PRIMARY KEY,
-        username VARCHAR(255) NOT NULL,
-        password VARCHAR(255) NOT NULL
-    )
-    """)
-
-    username = dict()
-    password = dict()
-
-    data = int(input(f"\n[{INPUT}] how many users do you want to make? "))
-    for i in range(0, data):
-        users_name = input(f"\n[{INPUT}] what is this users name? ")
-        password_ = maskpass.askpass(prompt=f"[{INPUT}] what is this users password? ", mask="*")
-        username[i], password[i] = users_name, hashlib.sha256(password_.encode()).hexdigest()
-        cur.execute("INSERT INTO userdata (username, password) VALUES (?, ?)", (username[i], password[i])) 
-    
-    conn.commit() 
-
 SEPARATOR = "<sep>"
 list_of_clients = {}
 BUFFER_SIZE = 1024 * 128
@@ -116,6 +60,10 @@ s.bind(("0.0.0.0", 431))
 s.listen(100)
 
 
+print(f"\n[{IMPORTANT}] Authentication server running on 0.0.0.0:430")
+print(f"[{IMPORTANT}] Chat server running on 0.0.0.0:430\n")
+
+
 def on_closing(event=None):
     if list_of_clients == None:
         for clients in list_of_clients.values():
@@ -130,15 +78,25 @@ def change_appearance_mode(new_appearance_mode):
 def removeuser():
     username = removeuser_username.get() 
     
-    sqliteConnection = sqlite3.connect('userdata.db')
-    cursor = sqliteConnection.cursor()
+    conn = sqlite3.connect("userdata.db")
+    cur = conn.cursor()
 
-    sql_update_query = """DELETE from userdata where username = ?"""
-    cursor.execute(sql_update_query, (username,))
-    sqliteConnection.commit()
-    
-    removeuser_username.set("")
+    username_valid = "SELECT * FROM userdata WHERE username = ?"
+    cur.execute(username_valid, (username,))
 
+    if cur.fetchall():
+        
+        sqliteConnection = sqlite3.connect('userdata.db')
+        cursor = sqliteConnection.cursor()
+
+        sql_update_query = """DELETE from userdata where username = ?"""
+        cursor.execute(sql_update_query, (username,))
+        sqliteConnection.commit()
+        
+        removeuser_username.set("")
+    else:
+        print(f"[{INFO}] no user found")
+        removeuser_username.set("")
 
 def adduser():
     username = adduser_username.get()
