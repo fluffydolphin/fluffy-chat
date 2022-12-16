@@ -1,2 +1,2 @@
 # fluffy-chat
-simple python chat app with encryption, GUI and authentication server
+simple python chat app with a GUI and authentication server
