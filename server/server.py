@@ -65,23 +65,24 @@ admin_server.bind(("0.0.0.0", 432))
 admin_server.listen(100)
 
 
-admin_passowrd = input(f"[{INPUT}] Enter admin password: ")
+admin_passowrd = os.environ['ADMIN_PASSOWRD']
 
-conn = sqlite3.connect("./userdata.db")
-cur = conn.cursor()
+if admin_passowrd:
+    conn = sqlite3.connect("./userdata.db")
+    cur = conn.cursor()
 
-cur.execute("""
-CREATE TABLE IF NOT EXISTS userdata (
-    id INTEGER PRIMARY KEY,
-    username VARCHAR(255) NOT NULL,
-    password VARCHAR(255) NOT NULL
-)
-""")
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS userdata (
+        id INTEGER PRIMARY KEY,
+        username VARCHAR(255) NOT NULL,
+        password VARCHAR(255) NOT NULL
+    )
+    """)
 
-new_username, new_password = "admin", hashlib.sha256(admin_passowrd.encode()).hexdigest()
-cur.execute("INSERT INTO userdata (username, password) VALUES (?, ?)", (new_username, new_password)) 
+    new_username, new_password = "admin", hashlib.sha256(admin_passowrd.encode()).hexdigest()
+    cur.execute("INSERT INTO userdata (username, password) VALUES (?, ?)", (new_username, new_password)) 
 
-conn.commit() 
+    conn.commit() 
 
 
 print(f"\n[{IMPORTANT}] Authentication server running on 0.0.0.0:430")
