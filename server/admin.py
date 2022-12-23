@@ -1,8 +1,7 @@
-from tkinter import * 
+import sqlite3, sys, socket, hashlib, time, os, hashlib, maskpass, customtkinter, tkinter
 from threading import Thread
-import socket, customtkinter, tkinter, sys, time
+from tkinter import *
 from cryptography.fernet import Fernet
-
 
 
 SEPARATOR = "<sep>"
@@ -47,30 +46,31 @@ def on_closing(event=None):
     s.close()
     app.destroy()
     sys.exit()
-
-
-def send(event=None):
-    while True:
-        msg = my_msg.get()
-        if msg == "/exit":
-            s.send(Fernet(key).encrypt(msg.encode()))
-            s.close()
-            s.close()
-            sys.exit()
-        s.send(Fernet(key).encrypt(f"{username} @ {current_time}{SEPARATOR}{msg}".encode()))
-        my_msg.set("")
-        break
+    
 
 def listen():
     while True:
-        output_user, output = Fernet(key).decrypt(s.recv(1024)).decode().split(SEPARATOR)
+        output = Fernet(key).decrypt(s.recv(1024)).decode()
         if output == "/serverexit":
             s.close()
             app.destroy()
             sys.exit()
-        msg_list.insert(tkinter.END, f"")
-        msg_list.insert(tkinter.END, f"{output_user}")
-        msg_list.insert(tkinter.END, f"{output}")
+        else: continue
+
+def adduser():
+    username = adduser_username.get()
+    password = adduser_password.get()
+    s.send(Fernet(key).encrypt(f"adduser{SEPARATOR}{username}{SEPARATOR}{password}".encode()))
+    adduser_username.set("")
+    adduser_password.set("")
+
+def removeuser():
+    username = removeuser_username.get()
+    s.send(Fernet(key).encrypt(f"removeuser{SEPARATOR}{username}".encode()))
+    output = Fernet(key).decrypt(s.recv(1024)).decode()
+    msg_list.insert(tkinter.END, f"")
+    msg_list.insert(tkinter.END, f"{output}")
+    removeuser_username.set("")
 
 
 if Fernet(key).decrypt(auth_server.recv(1024)).decode() == "login":
@@ -111,16 +111,16 @@ if Fernet(key).decrypt(auth_server.recv(1024)).decode() == "login":
     login_app.mainloop()
 
 
-s.connect(("localhost", 431))
+s.connect(("localhost", 432))
+
+
 
 
 app = customtkinter.CTk()
-app.geometry("1000x650")
+app.geometry("235x600")
 app.title("fluffy chat")
 app.grid_columnconfigure(1, weight=1)
 app.grid_rowconfigure(0, weight=1)
-
-app.bind("<Return>", send)
 
 app.frame_left = customtkinter.CTkFrame(master=app, width=180, corner_radius=10)
 app.frame_left.grid(row=0, column=0, sticky="nswe", padx=20, pady=20)
@@ -153,10 +153,36 @@ msg_list.pack(side=tkinter.LEFT, fill=tkinter.BOTH)
 msg_list.pack()
 messages_frame.pack(pady=15, padx=40, fill="both", expand=True)
 
-entry_field = customtkinter.CTkEntry(master=app.frame_right, placeholder_text="command", text_font=("Roboto Medium", 12), width=500, height=25, textvariable=my_msg)
-entry_field.pack(pady=20, padx=60)
-send_button = customtkinter.CTkButton(master=app.frame_right, text="Send", command=send, relief='groove', text_font=("Roboto Medium", 11))
-send_button.pack(pady=20, padx=60)
+
+removeuser_username = tkinter.StringVar()
+
+app.adduser_username = customtkinter.CTkLabel(master=app.frame_left, text='Username', text_font=("Roboto Medium", 10))
+app.adduser_username.grid(row=2, column=0, pady=5, padx=20, sticky="w")
+
+username_field = customtkinter.CTkEntry(master=app.frame_left, placeholder_text="username", text_font=("Roboto Medium", 12), width=150, height=25, textvariable=removeuser_username)
+username_field.grid(row=3, column=0, pady=5, padx=20, sticky="w")
+
+removeuser_button = customtkinter.CTkButton(master=app.frame_left, text="Remove user", command=removeuser, relief='groove', text_font=("Roboto Medium", 11))
+removeuser_button.grid(row=4, column=0, pady=30, padx=20, sticky="w")
+
+
+adduser_username = tkinter.StringVar()
+adduser_password = tkinter.StringVar()
+
+app.adduser_username = customtkinter.CTkLabel(master=app.frame_left, text='Username', text_font=("Roboto Medium", 10))
+app.adduser_username.grid(row=6, column=0, pady=5, padx=20, sticky="w")
+
+username_field = customtkinter.CTkEntry(master=app.frame_left, placeholder_text="username", text_font=("Roboto Medium", 12), width=150, height=25, textvariable=adduser_username)
+username_field.grid(row=7, column=0, pady=5, padx=20, sticky="w")
+
+app.adduser_password = customtkinter.CTkLabel(master=app.frame_left, text='Password', text_font=("Roboto Medium", 10))
+app.adduser_password.grid(row=8, column=0, pady=5, padx=20, sticky="w")
+
+password_field = customtkinter.CTkEntry(master=app.frame_left, placeholder_text="password", show="*", text_font=("Roboto Medium", 12), width=150, height=25, textvariable=adduser_password)
+password_field.grid(row=9, column=0, pady=5, padx=20, sticky="w")
+
+adduser_button = customtkinter.CTkButton(master=app.frame_left, text="add user", command=adduser, relief='groove', text_font=("Roboto Medium", 11))
+adduser_button.grid(row=10, column=0, pady=5, padx=20, sticky="w")
 
 
 app.label_mode = customtkinter.CTkLabel(master=app.frame_left, text="Appearance Mode:", text_font=("Roboto Medium", 10))
@@ -165,17 +191,7 @@ app.label_mode.grid(row=11, column=0, pady=0, padx=20, sticky="w")
 app.optionmenu_1 = customtkinter.CTkOptionMenu(master=app.frame_left, values=["System", "Light", "Dark"], command=change_appearance_mode, text_font=("Roboto Medium", 10))
 app.optionmenu_1.grid(row=12, column=0, pady=15, padx=20, sticky="w")
 
-
-app.label_username = customtkinter.CTkLabel(master=app.frame_left, text=f"Logged in as {username}", text_font=("Roboto Medium", 10))
-app.label_username.grid(row=13, column=0, pady=15, padx=20, sticky="w")
-
-
 app.protocol("WM_DELETE_WINDOW", on_closing)
 
-Thread(target=listen).start()
 
 app.mainloop()
-
-
-auth_server.close()
-s.close()
