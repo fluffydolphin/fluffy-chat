@@ -11,7 +11,7 @@ key = b'fXpsGp9mJFfNYCTtGeB2zpY9bzjPAoaC0Fkcc13COy4='
 auth_server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-auth_server.connect(("localhost", 430))
+auth_server.connect(("192.168.3.149", 430))
 
 
 def change_appearance_mode(new_appearance_mode):
@@ -61,6 +61,9 @@ def adduser():
     username = adduser_username.get()
     password = adduser_password.get()
     s.send(Fernet(key).encrypt(f"adduser{SEPARATOR}{username}{SEPARATOR}{password}".encode()))
+    output = Fernet(key).decrypt(s.recv(1024)).decode()
+    msg_list.insert(tkinter.END, f"")
+    msg_list.insert(tkinter.END, f"{output}")
     adduser_username.set("")
     adduser_password.set("")
 
@@ -111,13 +114,13 @@ if Fernet(key).decrypt(auth_server.recv(1024)).decode() == "login":
     login_app.mainloop()
 
 
-s.connect(("localhost", 432))
+s.connect(("192.168.3.149", 432))
 
 
 
 
 app = customtkinter.CTk()
-app.geometry("235x600")
+app.geometry("1000x650")
 app.title("fluffy chat")
 app.grid_columnconfigure(1, weight=1)
 app.grid_rowconfigure(0, weight=1)

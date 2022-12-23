@@ -12,7 +12,7 @@ key = b'fXpsGp9mJFfNYCTtGeB2zpY9bzjPAoaC0Fkcc13COy4='
 auth_server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-auth_server.connect(("localhost", 430))
+auth_server.connect(("192.168.3.149", 430))
 
 
 def change_appearance_mode(new_appearance_mode):
@@ -111,7 +111,7 @@ if Fernet(key).decrypt(auth_server.recv(1024)).decode() == "login":
     login_app.mainloop()
 
 
-s.connect(("localhost", 431))
+s.connect(("192.168.3.149", 431))
 
 
 app = customtkinter.CTk()
