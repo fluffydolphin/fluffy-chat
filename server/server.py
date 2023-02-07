@@ -65,10 +65,25 @@ admin_server.bind(("0.0.0.0", 432))
 admin_server.listen(100)
 
 
-admin_passowrd = os.environ['ADMIN_PASSOWRD']
+admin_passowrd = '1212'#os.environ['ADMIN_PASSOWRD']
 
 if admin_passowrd:
-    conn = sqlite3.connect("./userdata.db")
+    conn = sqlite3.connect("admindata.db")
+    cur = conn.cursor()
+
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS userdata (
+        id INTEGER PRIMARY KEY,
+        username VARCHAR(255) NOT NULL,
+        password VARCHAR(255) NOT NULL
+    )
+    """)
+
+    new_username, new_password = "admin", hashlib.sha256(admin_passowrd.encode()).hexdigest()
+    cur.execute("INSERT INTO userdata (username, password) VALUES (?, ?)", (new_username, new_password)) 
+
+    conn.commit() 
+    conn = sqlite3.connect("userdata.db")
     cur = conn.cursor()
 
     cur.execute("""
@@ -86,7 +101,8 @@ if admin_passowrd:
 
 
 print(f"\n[{IMPORTANT}] Authentication server running on 0.0.0.0:430")
-print(f"[{IMPORTANT}] Chat server running on 0.0.0.0:431\n")
+print(f"[{IMPORTANT}] Chat server running on 0.0.0.0:431")
+print(f"[{IMPORTANT}] Admin server running on 0.0.0.0:432\n")
 
 
 def change_appearance_mode(new_appearance_mode):
@@ -199,18 +215,16 @@ def adminthread(admin_socket):
 
 
 def auth_service(auth_socket, n):
-    auth_socket.send(Fernet(key).encrypt("login".encode()))
     login_info = Fernet(key).decrypt(auth_socket.recv(1024)).decode()
     username, password = login_info.split(SEPARATOR)
     password = hashlib.sha256(password.encode()).hexdigest()
 
-    conn = sqlite3.connect("userdata.db")
-    cur = conn.cursor()
 
-    cur.execute("SELECT * FROM userdata WHERE username = ? AND password = ?", (username, password))
-
-    if cur.fetchall():
-        if username == "admin":
+    if username == "admin":
+        conn = sqlite3.connect("admindata.db")
+        cur = conn.cursor()
+        cur.execute("SELECT * FROM userdata WHERE username = ? AND password = ?", (username, password))
+        if cur.fetchall():
             print(f"[{INFO}] Successful admin login\n")
             auth_socket.send(Fernet(key).encrypt("successful".encode()))
             auth_socket.close() 
@@ -219,19 +233,27 @@ def auth_service(auth_socket, n):
             Thread(target=adminthread, args=(admin_socket,)).start()
             n += 1
         else:
-            print(f"[{INFO}] Successful login as: {username}\n")
+            print(f"[{INFO}] Failed login\n")
+            auth_socket.send(Fernet(key).encrypt("failed".encode()))
+            auth_socket.close()
+    else:
+        conn = sqlite3.connect("userdata.db")
+        cur = conn.cursor()
+        cur.execute("SELECT * FROM userdata WHERE username = ? AND password = ?", (username, password))
+        if cur.fetchall():
+            print(f"[{INFO}] Successful login as: {username}\n") 
             auth_socket.send(Fernet(key).encrypt("successful".encode()))
             auth_socket.close()
             client_socket, client_address = s.accept()
             msg = ": joined the chat"
             for clients in list_of_clients.values():
                 clients.send(Fernet(key).encrypt(f"{username} @ {current_time}{msg}{SEPARATOR}".encode()))
-            list_of_clients[username] = client_socket
+            list_of_clients[username] = client_socket    
             Thread(target=clientthread, args=(client_socket,)).start()
-    else:
-        print(f"[{INFO}] Failed login\n")
-        auth_socket.send(Fernet(key).encrypt("failed".encode()))
-        auth_socket.close()
+        else:
+            print(f"[{INFO}] Failed login\n")
+            auth_socket.send(Fernet(key).encrypt("failed".encode()))
+            auth_socket.close()
     
 
 while True:
@@ -239,9 +261,3 @@ while True:
     auth_thread = Thread(target=auth_service, args=(auth_socket, n))
     auth_thread.daemon = True
     auth_thread.start()
-
-
-
-
-auth_server.close()
-s.close()
