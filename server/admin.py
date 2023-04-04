@@ -1,5 +1,4 @@
-import sqlite3, sys, socket, hashlib, time, os, hashlib, maskpass, customtkinter, tkinter
-from threading import Thread
+import sys, socket, time, customtkinter, tkinter
 from tkinter import *
 from cryptography.fernet import Fernet
 
@@ -28,10 +27,8 @@ def send_login(event=None):
     auth_server.send(Fernet(key).encrypt(f"{username}{SEPARATOR}{password}".encode()))
     if Fernet(key).decrypt(auth_server.recv(1024)).decode() == "successful":
         auth_server.close()
-        print("successful")
         login_app.destroy()
     else:
-        print("failed")
         auth_server.close()
         login_app.destroy()
         sys.exit()
@@ -83,8 +80,20 @@ def removeuser():
     msg_list.insert(tkinter.END, f"")
     msg_list.insert(tkinter.END, f"{output}")
     removeuser_username.set("")
+    
 
+def alert_message():
+    dialog = customtkinter.CTkInputDialog(text="Type in the alert message:", title="Alert Message")
+    s.send(Fernet(key).encrypt(f"alertmessage{SEPARATOR}{dialog.get_input()}".encode()))
+    output = Fernet(key).decrypt(s.recv(1024)).decode()
+    msg_list.insert(tkinter.END, f"")
+    msg_list.insert(tkinter.END, f"{output}")
 
+def remove_alert_message():
+    s.send(Fernet(key).encrypt(f"removealert{SEPARATOR}".encode()))
+    output = Fernet(key).decrypt(s.recv(1024)).decode()
+    msg_list.insert(tkinter.END, f"")
+    msg_list.insert(tkinter.END, f"{output}")
 
 customtkinter.set_appearance_mode("System")
 customtkinter.set_default_color_theme("blue")
@@ -151,7 +160,7 @@ app.frame_right.columnconfigure(2, weight=0)
 
 
 app.label_2 = customtkinter.CTkLabel(master=app.frame_left, text='fluffy chat')
-app.label_2.grid(row=1, column=0, pady=10, padx=20)
+app.label_2.grid(row=1, column=0, pady=10, padx=10)
 
 
 messages_frame = tkinter.Frame(app.frame_right)
@@ -167,39 +176,44 @@ messages_frame.pack(pady=15, padx=40, fill="both", expand=True)
 removeuser_username = tkinter.StringVar()
 
 app.adduser_username = customtkinter.CTkLabel(master=app.frame_left, text='Username')
-app.adduser_username.grid(row=2, column=0, pady=5, padx=20, sticky="w")
+app.adduser_username.grid(row=2, column=0, pady=5, padx=10, sticky="w")
 
-username_field = customtkinter.CTkEntry(master=app.frame_left, placeholder_text="username", width=150, height=25, textvariable=removeuser_username)
-username_field.grid(row=3, column=0, pady=5, padx=20, sticky="w")
+username_field = customtkinter.CTkEntry(master=app.frame_left, placeholder_text="Username", width=150, height=25, textvariable=removeuser_username)
+username_field.grid(row=3, column=0, pady=5, padx=10, sticky="w")
 
 removeuser_button = customtkinter.CTkButton(master=app.frame_left, text="Remove user", command=removeuser)
-removeuser_button.grid(row=4, column=0, pady=30, padx=20, sticky="w")
+removeuser_button.grid(row=4, column=0, pady=5, padx=10, sticky="w")
 
+alert_message_button = customtkinter.CTkButton(app.frame_left, text="Alert Message", command=alert_message)
+alert_message_button.grid(row=5, column=0, pady=5, padx=10, sticky="w")
+
+alert_message_remove = customtkinter.CTkButton(master=app.frame_left, text="Remove Alert", command=remove_alert_message)
+alert_message_remove.grid(row=6, column=0, pady=5, padx=10, sticky="w")
 
 adduser_username = tkinter.StringVar()
 adduser_password = tkinter.StringVar()
 
 app.adduser_username = customtkinter.CTkLabel(master=app.frame_left, text='Username')
-app.adduser_username.grid(row=6, column=0, pady=5, padx=20, sticky="w")
+app.adduser_username.grid(row=7, column=0, pady=5, padx=10, sticky="w")
 
-username_field = customtkinter.CTkEntry(master=app.frame_left, placeholder_text="username", width=150, height=25, textvariable=adduser_username)
-username_field.grid(row=7, column=0, pady=5, padx=20, sticky="w")
+username_field = customtkinter.CTkEntry(master=app.frame_left, placeholder_text="Username", width=150, height=25, textvariable=adduser_username)
+username_field.grid(row=8, column=0, pady=5, padx=10, sticky="w")
 
 app.adduser_password = customtkinter.CTkLabel(master=app.frame_left, text='Password')
-app.adduser_password.grid(row=8, column=0, pady=5, padx=20, sticky="w")
+app.adduser_password.grid(row=9, column=0, pady=5, padx=10, sticky="w")
 
-password_field = customtkinter.CTkEntry(master=app.frame_left, placeholder_text="password", show="*", width=150, height=25, textvariable=adduser_password)
-password_field.grid(row=9, column=0, pady=5, padx=20, sticky="w")
+password_field = customtkinter.CTkEntry(master=app.frame_left, placeholder_text="Password", show="*", width=150, height=25, textvariable=adduser_password)
+password_field.grid(row=10, column=0, pady=5, padx=10, sticky="w")
 
-adduser_button = customtkinter.CTkButton(master=app.frame_left, text="add user", command=adduser)
-adduser_button.grid(row=10, column=0, pady=5, padx=20, sticky="w")
+adduser_button = customtkinter.CTkButton(master=app.frame_left, text="Add User", command=adduser)
+adduser_button.grid(row=11, column=0, pady=5, padx=10, sticky="w")
 
 
 app.label_mode = customtkinter.CTkLabel(master=app.frame_left, text="Appearance Mode:")
-app.label_mode.grid(row=11, column=0, pady=0, padx=20, sticky="w")
+app.label_mode.grid(row=12, column=0, pady=0, padx=10, sticky="w")
 
 app.optionmenu_1 = customtkinter.CTkOptionMenu(master=app.frame_left, values=["System", "Light", "Dark"], command=change_appearance_mode)
-app.optionmenu_1.grid(row=12, column=0, pady=15, padx=20, sticky="w")
+app.optionmenu_1.grid(row=13, column=0, pady=15, padx=10, sticky="w")
 
 app.protocol("WM_DELETE_WINDOW", on_closing)
 
