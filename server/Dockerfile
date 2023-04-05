@@ -10,4 +10,4 @@ RUN pip install -r requirements.txt
 
 COPY server.py .
 
-CMD ["python``", "server.py"]
+CMD ["python", "server.py"]
