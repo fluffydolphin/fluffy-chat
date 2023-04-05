@@ -1,4 +1,3 @@
-from tkinter import * 
 from threading import Thread
 import socket, customtkinter, tkinter, sys, time, pyperclip
 from cryptography.fernet import Fernet
@@ -92,7 +91,7 @@ def listen():
             msg_list.insert(tkinter.END, f"")
             msg_list.insert(tkinter.END, f"{output_user}")
             msg_list.insert(tkinter.END, f"{output}")
-            msg_list.yview(END)
+            msg_list.yview(tkinter.END)
         except:
             break
         
