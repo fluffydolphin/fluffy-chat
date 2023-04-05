@@ -224,6 +224,8 @@ def adminthread(admin_socket):
                     cringe, alert_message = message.split(SEPARATOR)
                     alert_status = True
                     admin_socket.send(Fernet(key).encrypt(f"Successfully added alert message".encode()))
+                    for client, room_number in list_of_clients.values():
+                        client.send(Fernet(key).encrypt(message.encode()))
                 if "removealert" in message:
                     alert_status = False
                     admin_socket.send(Fernet(key).encrypt(f"Successfully removed alert message".encode()))
